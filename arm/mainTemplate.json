@@ -18,7 +18,7 @@
     },
     "osDiskVhdUri": {
       "type": "string",
-      "defaultValue": "https://packerwesteurope.blob.core.windows.net/system/Microsoft.Compute/Images/vhds/ParsecNvidiaVS2019-osDisk.017130e3-4166-40f7-a878-f0a41804ea33.vhd"
+      "defaultValue": "https://packerwesteurope.blob.core.windows.net/system/Microsoft.Compute/Images/vhds/ParsecNvidia-osDisk.77df3c3e-f93a-4dcf-8b5f-82463d6eb221.vhd"
     },
     "adminName": {
       "type": "string",
@@ -31,6 +31,37 @@
       "metadata": {
         "type": "password",
         "description": "Admin password."
+      }
+    },
+    "parsec_teamId": {
+      "type": "string",
+      "metadata": {
+        "description": "Parsec Team ID"
+      }
+    },
+    "parsec_teamKey": {
+      "type": "securestring",
+      "metadata": {
+        "description": "Parsec Team Key"
+      }
+    },
+    "parsec_host": {
+      "type": "string",
+      "metadata": {
+        "description": "Parsec Hostname"
+      }
+    },
+    "parsec_userEmail": {
+      "type": "string",
+      "metadata": {
+        "description": "Parsec User Email"
+      }
+    },
+    "parsec_isGuestAccess": {
+      "type": "bool",
+      "defaultValue": false,
+      "metadata": {
+        "description": "Parsec Is Guest Access"
       }
     },
     "vNetName": {
@@ -172,7 +203,9 @@
           "destinationPortRange": "3389"
         }
       }
-    ]
+    ],
+
+    "teamConfig": "[concat('team_id=', parameters('parsec_teamId'), ':key=', parameters('parsec_teamKey') , ':name=', parameters('parsec_host') ,':user_email=', parameters('parsec_userEmail'), ':is_guest_access=', parameters('parsec_isGuestAccess'))]"
   },
 
   "resources": [
@@ -272,7 +305,7 @@
     {
       "type": "Microsoft.Compute/virtualMachines",
       "name": "[variables('vmName')]",
-      "apiVersion": "2019-03-01",
+      "apiVersion": "2021-03-01",
       "location": "[variables('location')]",
       "dependsOn": [
         "[variables('nicId')]",
@@ -292,6 +325,7 @@
           "adminUsername": "[parameters('adminName')]",
           "adminPassword": "[parameters('adminPass')]"
         },
+        "userData": "[base64(variables('teamConfig'))]",
         "networkProfile": {
           "networkInterfaces": [
             {
