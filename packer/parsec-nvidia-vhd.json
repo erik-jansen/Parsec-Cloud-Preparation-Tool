@@ -21,9 +21,9 @@
       "storage_account": "{{user `storageAccount`}}",
       "temp_compute_name": "{{user `temp_compute_name`}}",
       "os_type": "Windows",
-      "image_publisher": "MicrosoftWindowsServer",
-      "image_offer": "WindowsServer",
-      "image_sku": "2019-Datacenter",
+      "image_publisher": "microsoftvisualstudio",
+      "image_offer": "visualstudio2019latest",
+      "image_sku": "vs-2019-comm-latest-ws2019",
       "communicator": "winrm",
       "winrm_use_ssl": "true",
       "winrm_insecure": "true",
@@ -34,31 +34,6 @@
     }
   ],
   "provisioners": [
-    {
-      "type": "file",
-      "source": "PreLogon.ps1",
-      "destination": "C:/Azure/PreLogon.ps1"
-    },
-    {
-      "type": "file",
-      "source": "LogonScript-Add.ps1",
-      "destination": "C:/Azure/LogonScript-Add.ps1"
-    },
-    {
-      "type": "file",
-      "source": "LogonScript-Delete.ps1",
-      "destination": "C:/Azure/LogonScript-Delete.ps1"
-    },
-    {
-      "type": "file",
-      "source": "ScriptPolicies-Add.txt",
-      "destination": "C:/Azure/ScriptPolicies-Add.txt"
-    },
-    {
-      "type": "file",
-      "source": "ScriptPolicies-Delete.txt",
-      "destination": "C:/Azure/ScriptPolicies-Delete.txt"
-    },
     {
       "type": "shell-local",
       "inline": [
@@ -81,19 +56,16 @@
       "type": "powershell",
       "inline": [
         "echo 'Installing Chocolatey packages...'",
-        "choco install -y 7zip googlechrome directx",
+        "choco install -y 7zip googlechrome directx azure-cli",
         "echo 'Chocolatey packages installed.'"
       ]
     },
     {
       "type": "powershell",
       "inline": [
-        "$client = new-object System.Net.WebClient",
-        "$client.DownloadFile('https://download.microsoft.com/download/8/5/C/85C25433-A1B0-4FFA-9429-7E023E7DA8D8/LGPO.zip','C:\\Azure\\LGPO.zip')",
-        "7z x 'C:\\Azure\\LGPO.zip' -oC:\\Azure\\",
-        "del 'C:\\Azure\\LGPO.zip'",
-        "C:\\Azure\\LGPO_30\\LGPO.exe /t 'C:\\Azure\\ScriptPolicies-Add.txt'",
-        "powershell.exe 'C:\\Azure\\LogonScript-Add.ps1'"
+        "echo '>>> Installing Epic Games Launcher ...'",
+        "$process = Start-Process -FilePath 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vs_installer.exe' -ArgumentList \"modify\",\"--installPath\",'\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\"',\"--add\",\"Component.Unreal\",\"--quiet\",\"--norestart\" -Wait -PassThru",
+        "Write-Output $process.ExitCode"
       ]
     },
     {
@@ -110,6 +82,30 @@
       "inline": [
         "echo 'Disabling Server Manager...'",
         " Get-ScheduledTask -TaskName ServerManager | Disable-ScheduledTask | Out-Null"
+      ]
+    },
+    {
+      "type": "powershell",
+      "inline": [
+        "echo 'Changing default user settings...'",
+        "echo 'Windows Explorer settings'",
+        "reg load HKLM\\DefaultUser C:\\Users\\Default\\NTUSER.DAT",
+        "$path = \"HKLM:\\Defaultuser\\Software\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced\"",
+        "New-ItemProperty -Path $path -Name HideFileExt -Value \"0\" -PropertyType DWord",
+        "New-ItemProperty -Path $path -Name Hidden -Value \"1\" -PropertyType DWord",
+        "echo 'Wallpaper'",
+        "$path = \"HKLM:\\Defaultuser\\Software\\Microsoft\\Windows\\CurrentVersion\"",
+        "New-Item -Path $path -Name \"Policies\"",
+        "New-Item -Path ($path+\"\\Policies\") -Name \"System\"",
+        "New-ItemProperty -Path ($path+\"\\Policies\\System\") -Name Wallpaper -PropertyType String -value \"C:\\ParsecTemp\\parsec+desktop.png\"",
+        "New-ItemProperty -Path ($path+\"\\Policies\\System\") -Name WallpaperStyle -PropertyType String -value 2",
+        "echo 'Mouse'",
+        "$path = \"HKLM:\\Defaultuser\\Control Panel\\Mouse\"",
+        "Set-ItemProperty -Path $path -Name MouseSpeed -Value 1",
+        "echo 'Mouse Keys'",
+        "$path = \"HKLM:\\Defaultuser\\Control Panel\\Accessibility\\MouseKeys\"",
+        "Set-ItemProperty -Path $path -Name Flags -Value 63",
+        "echo 'Done - Changing default user settings...'"
       ]
     },
     {
