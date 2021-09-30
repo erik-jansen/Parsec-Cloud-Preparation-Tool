@@ -27,6 +27,14 @@ To create the offers in the Azure Marketplace, you'll need a few things:
 3. Powershell scripts - these are the Powershell scripts that will configure the team computers and install additional applications. These will be run by CustomScriptExtension.
 4. SAS address to your VHD created previously: https://docs.microsoft.com/en-us/azure/marketplace/azure-vm-get-sas-uri#generate-the-sas-address.
 
+### ARM Template Validation
+
+Install the [ARM Test Toolkit](https://docs.microsoft.com/en-us/azure/azure-resource-manager/templates/test-toolkit) to validate your ARM template and `createUiDefinition.json` files before submitting to the Partner Center. You will need to [install Powershell](https://docs.microsoft.com/en-us/powershell/scripting/install/installing-powershell?view=powershell-7.1) to use this toolkit. To run the validation in Powershell:
+
+`Test-AzTemplate -TemplatePath /path/to/mainTemplate.json`
+
+### Packaging
+
 We have provided a script to generate the zip package that the Partner Center will need when creating your offer. To create the package:
 
 ```
