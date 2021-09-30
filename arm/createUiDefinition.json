@@ -5,13 +5,28 @@
   "parameters": {
     "basics": [
       {
+        "name": "vmName",
+        "type": "Microsoft.Common.TextBox",
+        "label": "Virtual machine name",
+        "placeholder": "[concat('ParsecVM', take(replace(guid(), '-', ''), 6))]",
+        "defaultValue": "[concat('ParsecVM', take(replace(guid(), '-', ''), 6))]",
+        "toolTip": "Virtual machines in Azure have two distinct names: virtual machine name used as the Azure resource identifier, and in guest host name. When you create a VM in the portal, the same name is used for both the virtual machine name and the host name. The virtual machine name cannot be changed after the VM is created. You can change the host name when you log into the virtual machine.",
+        "constraints": {
+          "required": true,
+          "regex": "^.{1,15}$",
+          "validationMessage": "Virtual machine name must be 1-15 characters long."
+        },
+        "visible": true
+      },
+      {
         "name": "vmSize",
         "type": "Microsoft.Compute.SizeSelector",
         "label": "VM size",
-        "toolTip": "The size of the virtual machine",
+        "toolTip": "Select a VM size to support the workload that you want to run. The size that you choose then determines factors such as processing power, memory, and storage capacity. Azure offers a wide variety of sizes to support many types of uses. Azure charges an hourly price based on the VM's size and operating system.<br>[Learn more about Virtual Machine sizes](http://go.microsoft.com/fwlink/?LinkId=2079859)",
         "recommendedSizes": [
-          "Standard_NV6",
-          "Standard_NV12s_v3"
+          "Standard_NV12s_v3",
+          "Standard_NV24s_v3",
+          "Standard_NV48s_v3"
         ],
         "constraints": {
           "allowedSizes": [
@@ -34,7 +49,7 @@
         "name": "adminUsername",
         "type": "Microsoft.Compute.UserNameTextBox",
         "label": "Admin username",
-        "toolTip": "Admin username for the VM.",
+        "toolTip": "The administrator username for the VM",
         "osPlatform": "Windows"
       },
       {
@@ -45,12 +60,10 @@
           "confirmPassword": "Confirm password"
         },
         "toolTip": {
-          "password": "Admin password for the VM."
+          "password": "The administrator password for the VM"
         },
         "constraints": {
-          "required": true,
-          "customPasswordRegex": "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@!#$%?^{}~&+`¬:;_\\-=|<>\\\/\\[\\]£()*])(?=\\S+$).{8,}$",
-          "customValidationMessage": "Password must be at least 8 characters long, containing at least one of each of the following: upper case characters, lower case characters, numbers and special characters."
+          "required": true
         },
         "options": {
           "hideConfirmation": false
@@ -64,7 +77,7 @@
         "name": "parsecConfig",
         "label": "Parsec Configuration",
         "subLabel": {
-          "preValidation": "Configure Parsec Teams ",
+          "preValidation": "Configure Parsec Team Computers",
           "postValidation": "Done"
         },
         "bladeTitle": "Parsec Configuration",
@@ -73,82 +86,91 @@
             "name": "teamId",
             "type": "Microsoft.Common.TextBox",
             "label": "Parsec Team ID",
-            "toolTip": "Parsec Team ID",
+            "toolTip": "Team Computers are provisioned by using the Team ID and Team's Computer Key, which can be obtained from the Teams administrator panel, in the Team Computers section.",
             "visible": true,
             "constraints": {
-              "required": true
+              "required": true,
+              "regex": "^.{1,}$",
+              "validationMessage": "A team ID is required."
             }
           },
           {
             "name": "teamKey",
             "type": "Microsoft.Common.TextBox",
             "label": "Parsec Team Key",
-            "toolTip": "Parsec Team Key",
+            "toolTip": "Team Computers are provisioned by using the Team ID and Team's Computer Key, which can be obtained from the Teams administrator panel, in the Team Computers section.",
             "visible": true,
             "constraints": {
-              "required": true
+              "required": true,
+              "regex": "^.{1,}$",
+              "validationMessage": "A team key is required."
             }
           },
           {
             "name": "host",
             "type": "Microsoft.Common.TextBox",
-            "label": "Hostname",
-            "toolTip": "Hostname for the Parsec VM",
+            "label": "Host Name",
+            "toolTip": "The name of your computer. Leave blank to use the virtual machine hostname.",
             "visible": true,
             "constraints": {
-              "required": false
+              "required": false,
+              "regex": "^.{1,15}$",
+              "validationMessage": "Host name must be 1-15 characters long."
             }
           },
           {
             "name": "userEmail",
             "type": "Microsoft.Common.TextBox",
             "label": "Parsec User Email",
-            "toolTip": "Email address of the Parsec Account",
+            "toolTip": "You can assign a computer to a user using their Parsec email. If the email does not match an existing team member the computer becomes reserved and once a user with a matching email joins the team the computer is automatically assigned to them. You can revoke reservations through the admin dashboard.",
             "visible": true,
             "constraints": {
-              "required": false
+              "required": false,
+              "regex": "^(\\S+@\\S+){1}$",
+              "validationMessage": "Please enter a valid email address."
             }
           },
           {
             "name": "isGuestAccess",
             "type": "Microsoft.Common.CheckBox",
             "label": "Guest Access",
-            "toolTip": "Configure Guest Access",
+            "toolTip": "Team Computers can be enabled for Guest Access. Once enabled the computer will show in the Guest Access tab for all admins and guest access coordinators.",
             "visible": true
           }
         ]
       },
       {
         "name": "infrastructureConfig",
-        "label": "VM Network",
+        "label": "Networking",
         "subLabel": {
           "preValidation": "Configure the VM network settings",
           "postValidation": "Done"
         },
-        "bladeTitle": "VM Network",
+        "bladeTitle": "Networking",
         "elements": [
           {
             "name": "ipSection",
             "type": "Microsoft.Common.Section",
-            "label": "Configure IP",
+            "label": "Configure public IP",
             "elements": [
               {
                 "name": "dnsAndPublicIP",
                 "type": "Microsoft.Network.PublicIpAddressCombo",
                 "label": {
                   "publicIpAddress": "Public IP address name",
-                  "domainNameLabel": "DNS Prefix"
+                  "domainNameLabel": "DNS Name Label"
                 },
                 "toolTip": {
-                  "domainNameLabel": "Unique DNS Prefix for the Parsec VM public IP address."
+                  "domainNameLabel": "Must be unique within the Azure region you create the name in (across all subscriptions and all customers). Azure automatically registers the name and IP address in its DNS so you can connect to a resource with the name. Azure appends a default subnet location.cloudapp.azure.com to the name you provide to create the fully qualified DNS name."
                 },
                 "defaultValue": {
-                  "publicIpAddressName": "ParsecVm-IP",
-                  "domainNameLabel": "[concat('parsec', take(replace(guid(), '-', ''), 6))]"
+                  "publicIpAddressName": "[concat(basics('vmName'), '-pip')]",
+                  "domainNameLabel": "[toLower(basics('vmName'))]"
                 },
                 "options": {
-                  "hideNone": false,
-                  "hideDomainNameLabel": false
+                  "hideNone": true,
+                  "hideDomainNameLabel": false,
+                  "hideExisting": false
                 }
               }
             ],
@@ -162,12 +184,15 @@
               "subnets": "Subnets"
             },
             "toolTip": {
-              "virtualNetwork": "Virtual Network Name",
-              "subnets": "Subnet requried for Azure Application"
+              "virtualNetwork": "Virtual networks are logically isolated from each other in Azure. You can configure their IP address ranges, subnets, route tables, gateways, and security settings, much like a traditional network in your data center. Virtual machines in the same virtual network can access each other by default.",
+              "subnets": "The name must be unique within the virtual network. For maximum compatibility with other Azure services, we recommend using a letter as the first character of the name."
             },
             "defaultValue": {
-              "name": "ParsecVm-vnet",
+              "name": "[concat(basics('vmName'), '-vnet')]",
               "addressPrefixSize": "/24"
+            },
+            "options": {
+              "hideExisting": false
             },
             "constraints": {
               "minAddressPrefixSize": "/24"
@@ -176,7 +201,7 @@
               "subnet1": {
                 "label": "Subnet name",
                 "defaultValue": {
-                  "name": "ParsecVm-subnet",
+                  "name": "ParsecVM-subnet",
                   "addressPrefixSize": "/26"
                 },
                 "constraints": {
@@ -197,15 +222,20 @@
             "name": "tagsByResource",
             "type": "Microsoft.Common.TagsByResource",
             "resources": [
-              "Microsoft.Storage/storageAccounts",
-              "Microsoft.Compute/virtualMachines"
-            ]
+              "Microsoft.Compute/virtualMachines",
+              "Microsoft.Network/publicIPAddresses",
+              "Microsoft.Network/networkSecurityGroups",
+              "Microsoft.Network/virtualNetworks",
+              "Microsoft.Network/networkInterfaces"
+            ],
+            "toolTip": "Tags are name/value pairs that enable you to categorize resources and view consolidated billing by applying the same tag to multiple resources and resource groups."
           }
         ]
       }
     ],
     "outputs": {
       "location": "[location()]",
+      "vmName": "[basics('vmName')]",
       "vmSize": "[basics('vmSize')]",
       "adminName": "[basics('adminUsername')]",
       "adminPass": "[basics('adminPassword').password]",
@@ -219,11 +249,13 @@
       "VNetNewOrExisting": "[steps('infrastructureConfig').virtualNetwork.newOrExisting]",
       "subNetName": "[steps('infrastructureConfig').virtualNetwork.subnets.subnet1.name]",
       "subNetARPrefix": "[steps('infrastructureConfig').virtualNetwork.subnets.subnet1.addressPrefix]",
+      "vNetRgName": "[steps('infrastructureConfig').virtualNetwork.resourceGroup]",
       "publicIpName": "[steps('infrastructureConfig').ipSection.dnsAndPublicIP.name]",
       "publicIpDns": "[steps('infrastructureConfig').ipSection.dnsAndPublicIP.domainNameLabel]",
       "publicIpAllocationMethod": "[steps('infrastructureConfig').ipSection.dnsAndPublicIP.publicIPAllocationMethod]",
       "publicIpSku": "[steps('infrastructureConfig').ipSection.dnsAndPublicIP.sku]",
       "publicIpNewOrExisting": "[steps('infrastructureConfig').ipSection.dnsAndPublicIP.newOrExistingOrNone]",
+      "publicIpRgName": "[steps('infrastructureConfig').ipSection.dnsAndPublicIP.resourceGroup]",
       "outTagsByResource": "[steps('tags').tagsByResource]"
     }
   }

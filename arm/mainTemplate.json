@@ -9,6 +9,13 @@
         "description": "Resource Location."
       }
     },
+    "vmName": {
+      "type": "string",
+      "defaultValue": "ParsecVM",
+      "metadata": {
+        "description": "Virtual machine name."
+      }
+    },
     "vmSize": {
       "type": "string",
       "defaultValue": "Standard_NV12s_v3",
@@ -62,7 +69,7 @@
     },
     "vNetName": {
       "type": "string",
-      "defaultValue": "ParsecVm-vnet",
+      "defaultValue": "ParsecVM-vnet",
       "metadata": {
         "description": "Parsec VM Virtual Network name"
       }
@@ -70,7 +77,7 @@
     "vNetARPrefixes": {
       "type": "array",
       "defaultValue": [
-        "10.0.0.0/26"
+        "10.1.6.0/24"
       ],
       "metadata": {
         "description": "Address prefix of the virtual network"
@@ -85,28 +92,35 @@
     },
     "subNetName": {
       "type": "string",
-      "defaultValue": "ParsecVm-subnet1",
+      "defaultValue": "ParsecVM-subnet",
       "metadata": {
         "description": "Parsec VM Subnet name"
       }
     },
     "subNetARPrefix": {
       "type": "string",
-      "defaultValue": "10.0.0.0/28",
+      "defaultValue": "10.1.6.0/26",
       "metadata": {
         "description": "Subnet prefix of the virtual network"
       }
     },
+    "vNetRgName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Virtual network resource group name"
+      }
+    },
     "publicIpName": {
       "type": "string",
-      "defaultValue": "ParsecVm-IP",
+      "defaultValue": "ParsecVM-pip",
       "metadata": {
         "description": "Unique public ip address name"
       }
     },
     "publicIpDns": {
       "type": "string",
-      "defaultValue": "[concat('parsec', uniqueString(resourceGroup().id))]",
+      "defaultValue": "[concat('parsecvm', uniqueString(resourceGroup().id))]",
       "metadata": {
         "description": "Unique DNS Public IP attached the VM"
       }
@@ -136,6 +150,13 @@
         "description": "Public IP New or Existing?"
       }
     },
+    "publicIpRgName": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().name]",
+      "metadata": {
+        "description": "Public IP resource group name"
+      }
+    },
     "outTagsByResource": {
       "type": "object",
       "defaultValue": {},
@@ -160,10 +181,8 @@
   },
 
   "variables": {
-    "vmName": "ParsecVm",
     "location": "[parameters('location')]",
     "vmSize": "[parameters('vmSize')]",
-    "domainNameLabel": "[concat('parsec', take(replace(guid(resourceGroup().name), '-', ''), 6))]",
 
     "vmImage": {
       "publisher": "microsoft-agci-gaming",
@@ -177,23 +196,18 @@
       "name": "parsec"
     },
 
-    "pubIpName": "[parameters('publicIpName')]",
-    "pubIpId": "[resourceId('Microsoft.Network/publicIPAddresses', variables('pubIpName'))]",
-    "ipconfName": "[concat(variables('vmName'),'-ipconf')]",
+    "pubIpId": "[resourceId(parameters('publicIpRgName'), 'Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]",
+    "ipconfName": "[concat(parameters('vmName'),'-ipconf')]",
 
-    "vnetName": "[parameters('vNetName')]",
-    "vnetId": "[resourceId('Microsoft.Network/virtualNetworks', variables('vnetName'))]",
-    "subnetName": "[parameters('subnetName')]",
-    "SubNetID": "[resourceId('Microsoft.Network/virtualNetworks/subnets', variables('vNetName'), variables('subnetName'))]",
+    "subnetId": "[resourceId(parameters('vNetRgName'), 'Microsoft.Network/virtualNetworks/subnets', parameters('vNetName'), parameters('subNetName'))]",
 
-    "nicName": "[concat(variables('vmName'),'-nic')]",
+    "nicName": "[concat(parameters('vmName'),'-nic')]",
     "nicId": "[resourceId('Microsoft.Network/networkInterfaces', variables('nicName'))]",
 
-    "nsgName": "[concat(variables('vmName'),'-nsg')]",
+    "nsgName": "[concat(parameters('vmName'),'-nsg')]",
     "nsgId": "[resourceId('Microsoft.Network/networkSecurityGroups', variables('nsgName'))]",
 
     "VNetAddressSpacePrefix": "[first(parameters('vNetARPrefixes'))]",
-    "SNetAddressRangePrefix": "[parameters('subnetARPrefix')]",
 
     "nsgRules": [
       {
@@ -218,33 +232,32 @@
     {
       "condition": "[equals(parameters('publicIpNewOrExisting'), 'new')]",
       "type": "Microsoft.Network/publicIPAddresses",
-      "name": "[variables('pubIpName')]",
-      "apiVersion": "2019-04-01",
+      "name": "[parameters('publicIpName')]",
+      "apiVersion": "2021-03-01",
       "sku": { "name": "[parameters('publicIpSku')]" },
-      "location": "[variables('location')]",
+      "location": "[parameters('location')]",
       "properties": {
         "publicIPAllocationMethod": "[parameters('publicIpAllocationMethod')]",
         "dnsSettings": {
-          "domainNameLabel": "[variables('domainNameLabel')]"
+          "domainNameLabel": "[parameters('publicIpDns')]"
         }
       }
     },
     {
       "type": "Microsoft.Network/networkSecurityGroups",
       "name": "[variables('nsgName')]",
-      "apiVersion": "2018-11-01",
-      "location": "[variables('location')]",
+      "apiVersion": "2021-03-01",
+      "location": "[parameters('location')]",
       "properties": {
         "securityRules": "[variables('nsgRules')]"
       }
-
     },
     {
       "condition": "[equals(parameters('VNetNewOrExisting'), 'new')]",
       "type": "Microsoft.Network/virtualNetworks",
-      "name": "[variables('vNetName')]",
-      "apiVersion": "2019-04-01",
-      "location": "[variables('location')]",
+      "name": "[parameters('vNetName')]",
+      "apiVersion": "2021-03-01",
+      "location": "[parameters('location')]",
       "properties": {
         "addressSpace": {
           "addressPrefixes": [
@@ -253,9 +266,9 @@
         },
         "subnets": [
           {
-            "name": "[variables('subnetName')]",
+            "name": "[parameters('subNetName')]",
             "properties": {
-              "addressPrefix": "[variables('SNetAddressRangePrefix')]"
+              "addressPrefix": "[parameters('subNetARPrefix')]"
             }
           }
         ]
@@ -264,11 +277,11 @@
     {
       "type": "Microsoft.Network/networkInterfaces",
       "name": "[variables('nicName')]",
-      "apiVersion": "2019-04-01",
-      "location": "[variables('location')]",
+      "apiVersion": "2021-03-01",
+      "location": "[parameters('location')]",
       "dependsOn": [
-        "[variables('pubIpId')]",
-        "[variables('vnetId')]",
+        "[resourceId('Microsoft.Network/publicIPAddresses', parameters('publicIpName'))]",
+        "[resourceId('Microsoft.Network/virtualNetworks', parameters('vNetName'))]",
         "[variables('nsgId')]"
       ],
       "properties": {
@@ -277,7 +290,7 @@
             "name": "[variables('ipconfName')]",
             "properties": {
               "subnet": {
-                "id": "[variables('SubNetID')]"
+                "id": "[variables('subnetId')]"
               },
               "privateIPAllocationMethod": "Dynamic",
               "publicIPAddress": {
@@ -293,8 +306,8 @@
     },
     {
       "type": "Microsoft.Compute/virtualMachines",
-      "name": "[variables('vmName')]",
-      "apiVersion": "2021-03-01",
+      "name": "[parameters('vmName')]",
+      "apiVersion": "2021-07-01",
       "location": "[variables('location')]",
       "dependsOn": [
         "[variables('nicId')]"
@@ -307,7 +320,7 @@
         "storageProfile": {
           "imageReference": "[variables('vmImage')]",
           "osDisk": {
-            "name": "[concat(variables('vmName'),'-osdisk')]",
+            "name": "[concat(parameters('vmName'),'-osdisk')]",
             "createOption": "FromImage",
             "caching": "ReadWrite",
             "managedDisk": {
@@ -316,7 +329,7 @@
           }
         },
         "osProfile": {
-          "computerName": "[variables('vmName')]",
+          "computerName": "[parameters('vmName')]",
           "adminUsername": "[parameters('adminName')]",
           "adminPassword": "[parameters('adminPass')]"
         },
@@ -333,11 +346,11 @@
     },
     {
       "type": "Microsoft.Compute/virtualMachines/extensions",
-      "apiVersion": "2019-12-01",
-      "name": "[concat(variables('vmName'),'/', 'CustomScriptExtension')]",
+      "apiVersion": "2021-07-01",
+      "name": "[concat(parameters('vmName'),'/', 'CustomScriptExtension')]",
       "location": "[variables('location')]",
       "dependsOn": [
-        "[resourceId('Microsoft.Compute/virtualMachines', variables('vmName'))]"
+        "[resourceId('Microsoft.Compute/virtualMachines', parameters('vmName'))]"
       ],
       "properties": {
         "publisher": "Microsoft.Compute",
@@ -357,7 +370,7 @@
   "outputs": {
     "Host Name": {
       "type": "string",
-      "value": "[reference(variables('pubIpId')).dnsSettings.fqdn]"
+      "value": "[if(empty(parameters('publicIpDns')), variables('pubIpId'), reference(variables('pubIpId'), '2021-03-01').dnsSettings.fqdn)]"
     },
     "UserName": {
       "type": "string",
