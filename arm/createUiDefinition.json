@@ -126,7 +126,7 @@
             "visible": true,
             "constraints": {
               "required": false,
-              "regex": "^(\\S+@\\S+){1}$",
+              "regex": "^(\\S+@\\S+){1,1}$",
               "validationMessage": "Please enter a valid email address."
             }
           },
