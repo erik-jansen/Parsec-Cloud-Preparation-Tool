@@ -56,16 +56,8 @@
       "type": "powershell",
       "inline": [
         "echo 'Installing Chocolatey packages...'",
-        "choco install -y 7zip googlechrome directx azure-cli",
+        "choco install -y 7zip googlechrome directx azure-cli epicgameslauncher",
         "echo 'Chocolatey packages installed.'"
-      ]
-    },
-    {
-      "type": "powershell",
-      "inline": [
-        "echo '>>> Installing Epic Games Launcher ...'",
-        "$process = Start-Process -FilePath 'C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vs_installer.exe' -ArgumentList \"modify\",\"--installPath\",'\"C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\"',\"--add\",\"Component.Unreal\",\"--quiet\",\"--norestart\" -Wait -PassThru",
-        "Write-Output $process.ExitCode"
       ]
     },
     {
@@ -107,6 +99,10 @@
         "Set-ItemProperty -Path $path -Name Flags -Value 63",
         "echo 'Done - Changing default user settings...'"
       ]
+    },
+    {
+      "type": "powershell",
+      "script": "scripts/gdk.ps1"
     },
     {
       "type": "windows-restart",
