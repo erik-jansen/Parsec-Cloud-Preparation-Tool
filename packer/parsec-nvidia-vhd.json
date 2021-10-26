@@ -102,7 +102,28 @@
     },
     {
       "type": "powershell",
-      "script": "scripts/gdk.ps1"
+      "inline": [
+        "echo '>>> Adding GDK ...'",
+        "$gdkLocation = ${env:Public} + '\\gdk'",
+        "New-Item -ItemType 'directory' -Path $gdkLocation",
+        "$gdkZip = $gdkLocation + '\\GDK-Main.zip'",
+        "$client = new-object System.Net.WebClient",
+        "$client.DownloadFile('https://github.com/microsoft/GDK/archive/refs/heads/Main.zip', $gdkZip)",
+        "Expand-Archive -LiteralPath $gdkZip -DestinationPath ${env:ProgramFiles}",
+        "reg add 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock' /v AllowAllTrustedApps /t REG_DWORD /d 0x00000001 /f",
+        "reg add 'HKLM\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\AppModelUnlock' /v AllowDevelopmentWithoutDevLicense /t REG_DWORD /d 0x00000001 /f",
+        "$pgdkExecutable = ${env:ProgramFiles} + '\\GDK-Main\\PGDK.exe'",
+        "#Start-Process $pgdkExecutable -ArgumentList @('/silent') -Wait",
+        "#$shortcutPath = ${env:ProgramFiles(x86)} + '\\Microsoft GDK\\Command Prompts\\Desktop VS 2019 Gaming Command Prompt.lnk'",
+        "#$destinationPath = $env:Public + '\\Desktop'",
+        "#Copy-Item -Path $shortcutPath -Destination $destinationPath",
+        "$shortcutLocation = ${env:Public} + '\\Desktop\\Install Microsoft GDK.lnk'",
+        "$WScriptShell = New-Object -ComObject WScript.Shell",
+        "$shortcut = $WScriptShell.CreateShortcut($shortcutLocation)",
+        "$shortcut.TargetPath = $pgdkExecutable",
+        "$shortcut.Save()",
+        "Write-Output 'TASK COMPLETED: Microsoft GDK installed...'"
+      ]
     },
     {
       "type": "windows-restart",
